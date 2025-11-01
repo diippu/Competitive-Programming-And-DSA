@@ -30,7 +30,7 @@ int mods(int i, int j, int m) {
     return ((i - j) % m + m) % m;
 }
 
-vector<int> get_hash(string s, int b, int m, vector<int> p) {
+vector<int> get_hash(string s, int b, int m, vector<int> &p) {
     //hash vector of a string 1000456781 998244341 37 73
     int sz = s.size();
     s = '#' + s;//everything is 1 based indexing
