@@ -11,46 +11,67 @@ using tup = array<int, 3>;
 template <typename T>
 using order_set = tree<T, null_type, less_equal<T>, rb_tree_tag, tree_order_statistics_node_update>;
 mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
- 
+
+struct node {
+    ll sum;
+    node() {
+        sum = 0;
+    }
+};
+
 const int N = 1e5 + 5;
 const int mod = 1e9 + 7;
-vector<ll> t(4 * N, 0), lazy(4 * N, 0);
+
+vector<node> seg(4 * N);
+vector<ll> lazy(4 * N, 0);
  
 void push(int ind, int al, int ar) {
-    int mid = al + (ar - al) / 2;
-    lazy[2 * ind] += lazy[ind]; 
-    t[2 * ind] += (mid - al + 1) * lazy[ind];
-    lazy[2 * ind + 1] += lazy[ind];
-    t[2 * ind + 1] += (ar - mid) * lazy[ind];
+    seg[ind].sum += 1ll * (ar - al + 1) * lazy[ind];
+
+    if(al != ar) {
+        lazy[2 * ind] += lazy[ind]; 
+        lazy[2 * ind + 1] += lazy[ind];
+    }
     lazy[ind] = 0; 
+}
+
+node merge(node a, node b) {
+    node cur;
+    cur.sum = a.sum + b.sum;
+    return cur;
 }
  
 void update(int ind, int al, int ar, int l, int r, int v) {
+    push(ind, al, ar);
     if(r < al or l > ar) return;
     if(l <= al and ar <= r) {
-        t[ind] += 1ll * (ar - al + 1) * v;
         lazy[ind] += v;
+        push(ind, al, ar);
         return;
     }
  
-    push(ind, al, ar);
     int mid = al + (ar - al) / 2;
     update(2 * ind, al, mid, l, r, v);
     update(2 * ind + 1, mid + 1, ar, l, r, v);
-    t[ind] = (t[2 * ind] + t[2 * ind + 1]);
+
+    seg[ind] = merge(seg[2 * ind], seg[2 * ind + 1]);
 }
  
-ll query(int ind, int al, int ar, int l, int r) {
-    if(r < al or l > ar) return 0;
+node query(int ind, int al, int ar, int l, int r) {
+    push(ind, al, ar);
+    if(r < al or l > ar) {
+        node cur;
+        return cur;
+    }
+
     if(l <= al and ar <= r) {
-        return t[ind];
+        return seg[ind];
     }
  
-    push(ind, al, ar);
     int mid = al + (ar - al) / 2;
-    ll left = query(2 * ind, al, mid, l, r);
-    ll rgt = query(2 * ind + 1, mid + 1, ar, l, r);
-    return (left + rgt);
+    node left = query(2 * ind, al, mid, l, r);
+    node rgt = query(2 * ind + 1, mid + 1, ar, l, r);
+    return merge(left, rgt);
 }
  
 void solve(int tc) {
@@ -64,7 +85,7 @@ void solve(int tc) {
  
         } else {
             int l, r; cin >> l >> r;
-            cout << query(1, 1, n, ++l, r) << '\n';
+            cout << query(1, 1, n, ++l, r).sum << '\n';
         }
     }
     //https://codeforces.com/edu/course/2/lesson/5/2/practice/contest/279653/problem/D
